@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <mpi.h>
 
@@ -9,24 +8,22 @@ int main(int argc, char *argv[]) {
     char received[100];
 
     MPI_Init(&argc, &argv);
-
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    next = (rank + 1) % size;
-    previous = (rank - 1 + size) % size;
+    next = (rank + 1) % size;              
+    previous = (rank - 1 + size) % size;   
 
     sprintf(message, "Hello from Process %d", rank);
 
-    MPI_Sendrecv(
-        message, 100, MPI_CHAR, next, 0,
-        received, 100, MPI_CHAR, previous, 0,
-        MPI_COMM_WORLD, MPI_STATUS_IGNORE
-    );
+    MPI_Sendrecv(message, 100, MPI_CHAR, next, 0,
+                 received, 100, MPI_CHAR, previous, 0,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-    printf("Process %d received: %s\n", rank, received);
-
+    printf("Process %d sent to Process %d and received from Process %d: %s\n",
+           rank, next, previous, received);
+    fflush(stdout);   
+    
     MPI_Finalize();
-
     return 0;
 }
