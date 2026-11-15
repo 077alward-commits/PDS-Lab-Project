@@ -1,4 +1,3 @@
-
 import socket
 import sys
 import time
@@ -11,12 +10,12 @@ if len(sys.argv) != 2 or sys.argv[1] not in ("1", "2", "3"):
     sys.exit(1)
 
 node = int(sys.argv[1])
-next_node = node % 3 + 1
+next_node = node % 3 + 1          
 
-requested = False
-printed = False
-has_token = (node == 1)
-completed = set()
+requested = False                
+printed = False                   
+has_token = (node == 1)           
+completed = set()                 
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((HOST, PORTS[node]))
@@ -32,12 +31,14 @@ def use_token():
     if not has_token:
         return
 
+    
+    if not requested and not printed:
+        return
+
     if requested and not printed:
         print(f"P{node}: TOKEN received - permission granted")
         print(f"P{node}: PRINTING (critical section)")
-
         time.sleep(1)
-
         print(f"P{node}: RELEASE printer")
 
         printed = True
@@ -58,15 +59,17 @@ print(f"P{node}: Ready on port {PORTS[node]}")
 try:
     if node == 1:
         input("Start P2 and P3, then press Enter to begin... ")
-
         send(2, "START")
         send(3, "START")
-
         send(next_node, "REQUEST 1")
         print("P1: REQUEST sent")
 
     while True:
-        message, _ = sock.recvfrom(1024)
+        try:
+            message, _ = sock.recvfrom(1024)
+        except ConnectionResetError:
+            
+            continue
         message = message.decode()
 
         if message == "START":
@@ -75,7 +78,6 @@ try:
 
         elif message.startswith("REQUEST "):
             origin = int(message.split()[1])
-
             if origin == node:
                 requested = True
                 print(f"P{node}: REQUEST completed around ring")
@@ -91,7 +93,6 @@ try:
         elif message.startswith("DONE ") and node == 1:
             completed.add(int(message.split()[1]))
             print(f"P1: {len(completed)}/3 print jobs finished")
-
             if len(completed) == 3:
                 send(2, "STOP")
                 print("P1: All three print jobs finished")
@@ -100,7 +101,6 @@ try:
         elif message == "STOP":
             if node == 2:
                 send(3, "STOP")
-
             print(f"P{node}: Finished")
             break
 
